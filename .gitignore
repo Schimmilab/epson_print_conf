@@ -168,3 +168,6 @@ devices*.xml
 .console_history
 
 lpr_jobs/
+
+# AI
+CLAUDE.md

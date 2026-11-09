@@ -71,7 +71,8 @@ class EpcTextConsole(TextConsole):
         scrollbar.pack(side="right", fill="y")
 
         help_text = tk.Text(
-            help_window, wrap="word", yscrollcommand=scrollbar.set
+            help_window, wrap="word", yscrollcommand=scrollbar.set,
+            background="white", foreground="black",
         )
         help_text.tag_configure("title", foreground="purple")
         help_text.tag_configure("section", foreground="blue")
@@ -216,6 +217,7 @@ class ToolTip:
             text=self.wrap_text(self.text),
             justify="left",
             background="LightYellow",
+            foreground="black",
             relief="solid",
             borderwidth=1,
         )
@@ -890,12 +892,14 @@ class EpsonPrinterUI(tk.Tk):
 
         # ScrolledText widget
         self.status_text = ScrolledText(
-            status_frame, wrap=tk.WORD, font=("TkDefaultFont")
+            status_frame, wrap=tk.WORD, font=("TkDefaultFont"),
+            background="white", foreground="black",
+            insertbackground="black",
         )
         self.status_text.tag_configure("error", foreground="red")
         self.status_text.tag_configure("warn", foreground="blue")
         self.status_text.tag_configure("note", foreground="purple")
-        self.status_text.tag_configure("info", foreground="green")
+        self.status_text.tag_configure("info", foreground="dark green")
         self.status_text.grid(
             row=0,
             column=0,
@@ -1448,17 +1452,23 @@ Web site: https://github.com/Ircama/epson_print_conf
                 "Feature not defined in the printer configuration."
             )
             if self.printer and self.printer.parm:
+                # Nozzle cleaning and print tests only need a hostname (no EEPROM)
+                self.clean_nozzles_button.state(["!disabled"])
+                self.print_tests_button.state(["!disabled"])
+                ToolTip(self.clean_nozzles_button, "")
+                ToolTip(self.print_tests_button, "")
+                # Temporary waste reset works via serial number (EEPROM or status parser)
+                if (
+                    "read_key" in self.printer.parm
+                    or self.printer.parm.get("serial_from_status")
+                ):
+                    self.temp_reset_ink_waste_button.state(["!disabled"])
+                    ToolTip(self.temp_reset_ink_waste_button, "")
                 if "read_key" in self.printer.parm:
                     self.read_eeprom_button.state(["!disabled"])
                     ToolTip(self.read_eeprom_button, "")
-                    self.clean_nozzles_button.state(["!disabled"])
-                    self.print_tests_button.state(["!disabled"])
-                    self.temp_reset_ink_waste_button.state(["!disabled"])
                     self.detect_configuration_button.state(["!disabled"])
                     ToolTip(self.detect_configuration_button, "")
-                    ToolTip(self.clean_nozzles_button, "")
-                    ToolTip(self.print_tests_button, "")
-                    ToolTip(self.temp_reset_ink_waste_button, "")
                 if "write_key" in self.printer.parm:
                     self.write_eeprom_button.state(["!disabled"])
                     ToolTip(
@@ -1508,10 +1518,17 @@ Web site: https://github.com/Ircama/epson_print_conf
                     "Feature not defined in the printer configuration."
                 )
 
-            if self.printer.parm.get("serial_number"):
+            if (
+                self.printer.parm.get("serial_number")
+                or self.printer.parm.get("serial_from_status")
+            ):
                 self.ser_num_entry.state(["!disabled"])
                 self.get_ser_num.state(["!disabled"])
-                self.set_ser_num.state(["!disabled"])
+                # Writing serial number requires EEPROM write access
+                if self.printer.parm.get("serial_number") and "write_key" in self.printer.parm:
+                    self.set_ser_num.state(["!disabled"])
+                else:
+                    self.set_ser_num.state(["disabled"])
                 ToolTip(self.get_ser_num, "")
             else:
                 self.ser_num_entry.state(["disabled"])
@@ -2230,9 +2247,9 @@ Web site: https://github.com/Ircama/epson_print_conf
             self.show_treeview()
 
             # Configure tags
-            self.tree.tag_configure("key", foreground="black")
-            self.tree.tag_configure("key_value", foreground="dark blue")
-            self.tree.tag_configure("value", foreground="blue")
+            self.tree.tag_configure("key", foreground="black", background="white")
+            self.tree.tag_configure("key_value", foreground="dark blue", background="white")
+            self.tree.tag_configure("value", foreground="blue", background="white")
             self.tree.heading("#0", text="Status Information", anchor="w")
 
             # Populate the Treeview
@@ -2289,9 +2306,9 @@ Web site: https://github.com/Ircama/epson_print_conf
             self.show_treeview()
 
             # Configure tags
-            self.tree.tag_configure("key", foreground="black")
-            self.tree.tag_configure("key_value", foreground="dark blue")
-            self.tree.tag_configure("value", foreground="blue")
+            self.tree.tag_configure("key", foreground="black", background="white")
+            self.tree.tag_configure("key_value", foreground="dark blue", background="white")
+            self.tree.tag_configure("value", foreground="blue", background="white")
             self.tree.heading("#0", text="Printer parameters", anchor="w")
 
             # Populate the Treeview
@@ -2355,9 +2372,9 @@ Web site: https://github.com/Ircama/epson_print_conf
             self.show_treeview()
 
             # Configure tags
-            self.tree.tag_configure("key", foreground="black")
-            self.tree.tag_configure("key_value", foreground="dark blue")
-            self.tree.tag_configure("value", foreground="blue")
+            self.tree.tag_configure("key", foreground="black", background="white")
+            self.tree.tag_configure("key_value", foreground="dark blue", background="white")
+            self.tree.tag_configure("value", foreground="blue", background="white")
             self.tree.heading(
                 "#0",
                 text="Values of the keys from the printer configuration",
@@ -3429,9 +3446,9 @@ Web site: https://github.com/Ircama/epson_print_conf
             self.show_treeview()
 
             # Configure tags
-            self.tree.tag_configure("key", foreground="black")
-            self.tree.tag_configure("key_value", foreground="dark blue")
-            self.tree.tag_configure("value", foreground="blue")
+            self.tree.tag_configure("key", foreground="black", background="white")
+            self.tree.tag_configure("key_value", foreground="dark blue", background="white")
+            self.tree.tag_configure("value", foreground="blue", background="white")
             self.tree.heading(
                 "#0",
                 text="Printer configuration",
